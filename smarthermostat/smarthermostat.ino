@@ -26,7 +26,7 @@ extern "C" {
 // WiFi setup
 
 const char* ssid = "Arkane Systems" ;
-const char* password = "LauraFraser09" ;
+const char* password = "NOTMYWIFIPASSWORD" ;
 
 // MQTT server
 
@@ -52,6 +52,9 @@ PubSubClient client (wifiClient);
 #define furnacePin relay3pin
 #define acPin relay2pin
 
+#define ON LOW
+#define OFF HIGH
+
 // Tickers -- periodic calls to scanning routines ---------
 
 Ticker statusBlink;
@@ -73,7 +76,12 @@ void setup()
   // Setup the LED pin.
   pinMode (statusPin, OUTPUT);
 
-  // Setup the relay pins.
+  // Setup the relay pins; start all off.
+  digitalWrite (relay4pin, OFF);
+  digitalWrite (relay3pin, OFF);
+  digitalWrite (relay2pin, OFF);
+  digitalWrite (relay1pin, OFF);
+  
   pinMode (relay4pin, OUTPUT);
   pinMode (relay3pin, OUTPUT);
   pinMode (relay2pin, OUTPUT);
@@ -195,6 +203,54 @@ void blink()
   digitalWrite(statusPin, !state);
 }
 
+// Relays -- relay state management ----------------------
+
+char status = 'O';
+
+// All off.
+void rOff ()
+{
+  // turn off all relays
+  // do the blower last
+  digitalWrite (furnacePin, OFF);
+  digitalWrite (acPin, OFF);
+
+  delay (250);
+
+  digitalWrite (fanPin, OFF);
+}
+
+// Blower only.
+void rBlower ()
+{
+  // make sure the others are off, then enable the blower
+  digitalWrite (furnacePin, OFF);
+  digitalWrite (acPin, OFF);
+
+  digitalWrite (fanPin, ON);
+}
+
+// Heating.
+void rHeating ()
+{
+  // disable AC, enable blower, then enable furnace
+  digitalWrite (acPin, OFF);
+
+  digitalWrite (fanPin, ON);
+  digitalWrite (furnacePin, ON);
+}
+
+// Cooling.
+void rCooling ()
+{
+  // disable furnace, enable blower, then enable ac
+  digitalWrite (furnacePin, OFF);
+
+  digitalWrite (fanPin, ON);
+  digitalWrite (acPin, ON);
+}
+
+
 // Loop -- run the MQTT loop forever ---------------------
 
 void loop()
@@ -260,7 +316,34 @@ void MQTT_callback (char* topic, byte* payload, unsigned int length)
   if (length != 1)
     return;
 
-  // here
+  // if we are asked for a status report, give it
+  if ((char)payload[0] == 'S')
+  {
+    char str[2] = "\0";
+    str[0] = status;
+    client.publish (pubStatusTopic, str);
+    return;
+  }
+
+  status = (char)payload[0];
+  switch (status)
+  {
+    case 'O':
+      rOff();
+      return;
+
+    case 'F':
+      rBlower ();
+      return;
+
+    case 'H':
+      rHeating ();
+      return;
+
+    case 'C':
+      rCooling ();
+      return;
+  }
   
   Serial.println("unknown command, noop");
 }
