@@ -62,8 +62,11 @@
 // as an output.
 
 // Wireless network SSID and passphrase.
+#define WLAN_SSID         "YOUR-SSID-HERE"
+#define WLAN_PASS         "YOUR-PASSPHRASE-HERE"
 
 // MQTT server details.
+#define MQTT_SERVER       "YOUR-MQTT-SERVER-HERE"
 #define MQTT_SERVERPORT   1883
 #define MQTT_CLIENTID     DEV_NAME
 #define MQTT_USERNAME     ""
@@ -85,6 +88,7 @@
 
 // Over-the-Air update settings.
 #define OTA_PORT          8266
+#define OTA_PASSWORD      "YOUR-OTA-PASSWORD-HERE"
 
 // **************************************************************************
 // * STANDARD TEMPLATE CODE - DO NOT EDIT                                   *
